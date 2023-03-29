@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Page</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css"
+    />
+    <style>
+      body {
+        background-color: #f9f9f9;
+      }
+
+      .ui.container {
+        margin-top: 2rem;
+      }
+
+      .ui.segment {
+        margin-top: 2rem;
+      }
+
+      .ui.form {
+        padding: 2rem;
+        background-color: #fff;
+        box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+      }
+
+      h1.ui.header {
+        font-size: 3rem;
+        color: #2b2d42;
+        text-align: center;
+      }
+
+      .ui.message.error {
+        margin-top: 1rem;
+      }
+
+      .ui.button.submit {
+        margin-top: 2rem;
+        background-color: #f72585;
+        color: #fff;
+      }
+
+      .ui.button.submit:hover {
+        background-color: #b5179e;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ui container">
+      <h1 class="ui header">Login Page</h1>
+      <div class="ui segment">
+        <form class="ui form" action="{{ url_for('login') }}" method="POST">
+          <div class="field">
+            <label>Username</label>
+            <input type="text" name="username" placeholder="Enter your username" />
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Enter your password" />
+          </div>
+          <button class="ui button submit" type="submit">Login</button>
+        </form>
+        {% if error %}
+        <div class="ui message error">{{ error }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Webcam OCR</title>
+</head>
+
+<body>
+    <p><span id="errorMsg"></span></p>
+
+    <!-- Stream video via webcam -->
+    <div class="video-wrap">
+        <video id="video" playsinline autoplay></video>
+    </div>
+
+    <!-- Trigger canvas web API -->
+    <div class="controller">
+        <button id="snap">Capture</button>
+    </div>
+
+    <!-- Webcam video snapshot -->
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <div id="result"></div>
+
+    <form action="/save" method="POST" style="max-width: 500px; margin: auto; display: none;" id="form">
+        <div style="display: flex; flex-direction: column; margin-bottom: 10px;">
+            <label for="number_plate" style="margin-bottom: 5px;">Number Plate:</label>
+            <input type="text" name="number_plate" id="number_plate" required
+                style="padding: 10px; border-radius: 5px; border: none; background-color: #f5f5f5;">
+        </div>
+        <div style="display: flex; flex-direction: column; margin-bottom: 10px;">
+            <label for="name" style="margin-bottom: 5px;">Name:</label>
+            <input type="text" name="name" id="name" required
+                style="padding: 10px; border-radius: 5px; border: none; background-color: #f5f5f5;">
+        </div>
+        <div style="display: flex; flex-direction: column; margin-bottom: 10px;">
+            <label for="roll_number" style="margin-bottom: 5px;">Roll Number:</label>
+            <input type="text" name="roll_number" id="roll_number" required
+                style="padding: 10px; border-radius: 5px; border: none; background-color: #f5f5f5;">
+        </div>
+        <div style="display: flex; justify-content: center;">
+            <button type="submit"
+                style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px;">Submit</button>
+        </div>
+    </form>
+
+
+
+    <script>
+        'use strict';
+
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const snap = document.getElementById("snap");
+        const errorMsgElement = document.querySelector('span#errorMsg');
+        const result = document.getElementById('result');
+
+        const constraints = {
+            audio: true,
+            video: {
+                width: 1280, height: 720
+            }
+        };
+
+        // Access webcam
+        async function init() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                handleSuccess(stream);
+            } catch (e) {
+                errorMsgElement.innerHTML = `navigator.getUserMedia error:${e.toString()}`;
+            }
+        }
+
+        // Success
+        function handleSuccess(stream) {
+            window.stream = stream;
+            video.srcObject = stream;
+        }
+
+        // Load init
+        init();
+
+        // Draw image
+        var context = canvas.getContext('2d');
+        snap.addEventListener("click", function () {
+            context.drawImage(video, 0, 0, 640, 480);
+            var dataURL = canvas.toDataURL("image/jpeg");
+            fetch('/detect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    image: dataURL
+                })
+            }).then(response => {
+                if (response.ok) {
+                    return response.text();
+                } else {
+                    throw new Error('Network response was not ok.');
+                }
+            }).then(data => {
+                console.log(data);
+                stream.getTracks().forEach(function (track) {
+                    track.stop();
+                });
+                video.style.display = "none";
+                snap.style.display = "none";
+                canvas.style.display = "none";
+                var obj = JSON.parse(data);
+                var croppedImage = obj.cropped_image;
+                var text = obj.str;
+                var img = document.createElement("img");
+                img.onload = function () {
+                    console.log("Image loaded successfully");
+                };
+                img.onerror = function () {
+                    console.log("Failed to load image");
+                };
+                img.src = 'data:image/jpeg;base64,' + croppedImage;
+                var resultDiv = document.getElementById("result");
+                var resultd = document.getElementById("number_plate");
+                var form = document.getElementById("form");
+                form.style.display = "block";
+                resultd.value = text;
+                resultd.placeholder = text;
+                resultDiv.innerHTML = "";
+                resultDiv.appendChild(img);
+            }).catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
+
+        });
+    </script>
+</body>
+
+</html>
